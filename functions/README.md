@@ -19,8 +19,117 @@
 ### 前提条件
 
 - Node.js 20以上
-- Firebase CLI
+- Firebase CLI（`npm install -g firebase-tools`）
 - Firebaseプロジェクトの作成
+
+### 初期セットアップ
+
+#### 1. Firebase プロジェクトの初期化
+
+プロジェクトルートディレクトリで以下のコマンドを実行：
+
+```bash
+# Firebase CLIにログイン
+firebase login
+
+# Firebaseプロジェクトを初期化
+firebase init
+
+# 以下の項目を選択：
+# - Firestore: Configure security rules and indexes files
+# - Functions: Configure a Cloud Functions directory and its files
+# - Storage: Configure security rules for Cloud Storage
+# - Emulators: Set up local emulators for Firebase products
+
+# Functions設定時の選択：
+# - 言語: TypeScript
+# - ESLint: Yes
+# - 依存関係のインストール: Yes
+```
+
+これにより、以下のファイルが自動生成されます：
+- `firebase.json` - Firebase プロジェクト設定
+- `firestore.rules` - Firestore セキュリティルール
+- `firestore.indexes.json` - Firestore インデックス設定
+- `storage.rules` - Storage セキュリティルール
+
+**注意**: これらのファイルは`.gitignore`に含まれており、各開発者が個別に設定します。
+
+#### 2. セキュリティルールの設定
+
+`firebase init`で生成されたセキュリティルールファイルを以下の内容で上書きしてください：
+
+**firestore.rules**:
+```
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /posts/{postId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    match /drinkMaster/{drinkId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    match /statistics/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
+```
+
+**storage.rules**:
+```
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /post-photos/{filename} {
+      allow read: if true;
+      allow write: if request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
+```
+
+#### 3. Firestoreインデックスの設定
+
+`firestore.indexes.json`に以下を設定：
+
+```json
+{
+  "indexes": [
+    {
+      "collectionGroup": "posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "profit", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "drinkMaster",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
+```
 
 ### インストール
 
