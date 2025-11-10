@@ -9,8 +9,10 @@
 1. **createPost** - ガチャ結果の投稿作成
 2. **getPosts** - 投稿一覧の取得
 3. **getStatistics** - 統計情報の取得
-4. **getDrinkMaster** - ドリンクマスター情報の取得
-5. **updateStatistics** - 統計情報の自動更新（トリガー関数）
+4. **getDrinkMaster** - ドリンクマスター情報の取得（現在アクティブなシーズンのみ）
+5. **getSeasons** - シーズン一覧の取得（アーカイブを含む）
+6. **getActiveSeason** - 現在アクティブなシーズンの取得
+7. **updateStatistics** - 統計情報の自動更新（トリガー関数）
 
 詳細な仕様については、`docs/planning.md`の「8. Firestore 関数仕様」を参照してください。
 
@@ -86,6 +88,8 @@ functions/
 │   │   ├── getPosts.ts
 │   │   ├── getStatistics.ts
 │   │   ├── getDrinkMaster.ts
+│   │   ├── getSeasons.ts
+│   │   ├── getActiveSeason.ts
 │   │   └── updateStatistics.ts
 │   ├── utils/                # ユーティリティ関数
 │   │   ├── validation.ts

@@ -63,8 +63,8 @@ const result = await functionName(data);
 
 ```typescript
 {
-  drink1Name: string;  // ドリンク1の名前（必須、最大50文字）
-  drink2Name: string;  // ドリンク2の名前（必須、最大50文字）
+  drink1Id: string;  // ドリンク1のID（必須）
+  drink2Id: string;  // ドリンク2のID（必須）
   photoUrl?: string;   // 写真のURL（オプション）
 }
 ```
@@ -80,20 +80,19 @@ const result = await functionName(data);
 
 #### 処理フロー
 
-1. `drink1Name`と`drink2Name`のバリデーション
+1. `drink1Id`と`drink2Id`のバリデーション
    - 空文字チェック
-   - 最大文字数チェック（50文字）
 2. `photoUrl`のバリデーション（指定されている場合）
    - URL形式チェック
-3. `drinkMaster`コレクションから両ドリンクの価格を取得
+3. `drinkMaster`コレクションから両ドリンクの情報（名前、価格）を取得
 4. お得度の計算: `profit = (drink1Price + drink2Price) - GACHA_PRICE`
-5. `posts`コレクションに新規ドキュメントを作成
+5. `posts`コレクションに新規ドキュメントを作成（ID、名前の両方を保存）
 6. 投稿IDとお得度を返却
 
 #### エラーケース
 
-- `invalid-argument`: 必須パラメータが不足、文字数超過、不正なURL
-- `not-found`: 指定されたドリンクがマスターに存在しない
+- `invalid-argument`: 必須パラメータが不足、不正なURL
+- `not-found`: 指定されたドリンクIDがマスターに存在しない
 - `internal`: データベースエラー、その他の予期しないエラー
 
 #### 使用例
@@ -102,8 +101,8 @@ const result = await functionName(data);
 const createPost = httpsCallable(functions, 'createPost');
 
 const result = await createPost({
-  drink1Name: 'コカ・コーラ',
-  drink2Name: 'ファンタ グレープ',
+  drink1Id: 'drink_001',
+  drink2Id: 'drink_002',
   photoUrl: 'https://example.com/photo.jpg'
 });
 
@@ -132,6 +131,8 @@ console.log(`お得度: ${result.data.profit}円`);
 {
   posts: Array<{
     id: string;
+    drink1Id: string;
+    drink2Id: string;
     drink1Name: string;
     drink2Name: string;
     photoUrl: string | null;
@@ -238,7 +239,7 @@ console.log('累計お得額:', result.data.totalProfit);
 
 ### 4. getDrinkMaster（ドリンクマスター取得）
 
-利用可能なドリンクの一覧を取得します。
+現在アクティブなシーズンで利用可能なドリンクの一覧を取得します。
 
 #### リクエスト
 
@@ -249,17 +250,20 @@ console.log('累計お得額:', result.data.totalProfit);
 ```typescript
 {
   drinks: Array<{
-    id: string;     // ドリンクID
-    name: string;   // ドリンク名
-    price: number;  // 通常価格（円）
+    id: string;       // ドリンクID
+    name: string;     // ドリンク名
+    price: number;    // 通常価格（円）
+    seasonId: string; // 所属するシーズンのID
   }>;
 }
 ```
 
 #### 処理フロー
 
-1. `drinkMaster`コレクションから全ドリンク情報を取得
-2. 名前順でソートして返却
+1. `seasons`コレクションから現在アクティブなシーズン（`isActive: true`）を取得
+2. アクティブなシーズンが存在しない場合は空の配列を返却
+3. `drinkMaster`コレクションから該当シーズンのドリンク情報を取得
+4. 名前順でソートして返却
 
 #### エラーケース
 
@@ -275,13 +279,107 @@ console.log('利用可能なドリンク:', result.data.drinks);
 
 // セレクトボックスに表示
 result.data.drinks.forEach(drink => {
-  console.log(`${drink.name} - ${drink.price}円`);
+  console.log(`${drink.name} - ${drink.price}円 (ID: ${drink.id})`);
 });
 ```
 
 ---
 
-### 5. updateStatistics（統計更新トリガー）
+### 5. getSeasons（シーズン一覧取得）
+
+すべてのシーズン（過去のアーカイブを含む）を取得します。
+
+#### リクエスト
+
+なし
+
+#### レスポンス
+
+```typescript
+{
+  seasons: Array<{
+    id: string;                    // シーズンID
+    name: string;                  // シーズン名
+    startDate: Timestamp;          // 開始日時
+    endDate: Timestamp | null;     // 終了日時（nullの場合は現在アクティブ）
+    isActive: boolean;             // アクティブフラグ
+  }>;
+}
+```
+
+#### 処理フロー
+
+1. `seasons`コレクションから全シーズンを取得
+2. 開始日時の降順でソート（新しいシーズンが先頭）
+3. シーズン一覧を返却
+
+#### エラーケース
+
+- `internal`: データベースエラー
+
+#### 使用例
+
+```typescript
+const getSeasons = httpsCallable(functions, 'getSeasons');
+
+const result = await getSeasons();
+console.log('シーズン一覧:', result.data.seasons);
+
+// アクティブなシーズンを探す
+const activeSeason = result.data.seasons.find(s => s.isActive);
+console.log('現在のシーズン:', activeSeason?.name);
+```
+
+---
+
+### 6. getActiveSeason（現在アクティブなシーズン取得）
+
+現在アクティブなシーズンを取得します。
+
+#### リクエスト
+
+なし
+
+#### レスポンス
+
+```typescript
+{
+  season: {
+    id: string;                    // シーズンID
+    name: string;                  // シーズン名
+    startDate: Timestamp;          // 開始日時
+    endDate: Timestamp | null;     // 終了日時（nullの場合は現在アクティブ）
+    isActive: boolean;             // アクティブフラグ
+  } | null;  // アクティブなシーズンがない場合はnull
+}
+```
+
+#### 処理フロー
+
+1. `seasons`コレクションから`isActive: true`のシーズンを取得
+2. 存在しない場合は`null`を返却
+3. 存在する場合はシーズン情報を返却
+
+#### エラーケース
+
+- `internal`: データベースエラー
+
+#### 使用例
+
+```typescript
+const getActiveSeason = httpsCallable(functions, 'getActiveSeason');
+
+const result = await getActiveSeason();
+if (result.data.season) {
+  console.log('現在のシーズン:', result.data.season.name);
+} else {
+  console.log('現在アクティブなシーズンはありません');
+}
+```
+
+---
+
+### 7. updateStatistics（統計更新トリガー）
 
 投稿が追加された際に統計情報を自動更新します。
 
@@ -312,8 +410,10 @@ result.data.drinks.forEach(drink => {
 
 ```typescript
 {
-  drink1Name: string;        // ドリンク1の名前
-  drink2Name: string;        // ドリンク2の名前
+  drink1Id: string;          // ドリンク1のID
+  drink2Id: string;          // ドリンク2のID
+  drink1Name: string;        // ドリンク1の名前（表示用）
+  drink2Name: string;        // ドリンク2の名前（表示用）
   photoUrl: string | null;   // 写真のURL
   profit: number;            // お得度（円）
   createdAt: Timestamp;      // 投稿日時（サーバータイムスタンプ）
@@ -324,8 +424,20 @@ result.data.drinks.forEach(drink => {
 
 ```typescript
 {
-  name: string;   // ドリンク名
-  price: number;  // 通常価格（円）
+  name: string;      // ドリンク名
+  price: number;     // 通常価格（円）
+  seasonId: string;  // 所属するシーズンのID
+}
+```
+
+### seasonsコレクション
+
+```typescript
+{
+  name: string;                  // シーズン名（例: "2024年春", "2024年夏"）
+  startDate: Timestamp;          // シーズン開始日時
+  endDate: Timestamp | null;     // シーズン終了日時（nullの場合は現在アクティブ）
+  isActive: boolean;             // アクティブフラグ（同時に1つのみtrue）
 }
 ```
 
@@ -361,6 +473,12 @@ service cloud.firestore {
       allow write: if false;                  // 管理者のみ（コンソール経由）
     }
     
+    // seasonsコレクション
+    match /seasons/{seasonId} {
+      allow read: if true;                    // 全員が読み取り可能
+      allow write: if false;                  // 管理者のみ（コンソール経由）
+    }
+    
     // statisticsコレクション
     match /statistics/{docId} {
       allow read: if true;                    // 全員が読み取り可能
@@ -382,7 +500,12 @@ service cloud.firestore {
    - `createdAt`（降順）
 
 2. **drinkMasterコレクション**
+   - `seasonId`（昇順）+ `name`（昇順）の複合インデックス
    - `name`（昇順）
+
+3. **seasonsコレクション**
+   - `isActive`（昇順）
+   - `startDate`（降順）
 
 ### キャッシュ戦略
 
@@ -402,21 +525,30 @@ import { createPostHandler } from './handlers/createPost';
 describe('createPost', () => {
   it('should create a post with correct profit', async () => {
     const result = await createPostHandler({
-      drink1Name: 'コカ・コーラ',
-      drink2Name: 'ファンタ グレープ'
+      drink1Id: 'drink_001',
+      drink2Id: 'drink_002'
     });
     
     expect(result.postId).toBeDefined();
     expect(result.profit).toBeGreaterThanOrEqual(0);
   });
   
-  it('should throw error for invalid drink name', async () => {
+  it('should throw error for invalid drink ID', async () => {
     await expect(
       createPostHandler({
-        drink1Name: '',
-        drink2Name: 'ファンタ グレープ'
+        drink1Id: '',
+        drink2Id: 'drink_002'
       })
-    ).rejects.toThrow('drink1Nameは空にできません');
+    ).rejects.toThrow('drink1Idは空にできません');
+  });
+  
+  it('should throw error for non-existent drink', async () => {
+    await expect(
+      createPostHandler({
+        drink1Id: 'non_existent_drink',
+        drink2Id: 'drink_002'
+      })
+    ).rejects.toThrow('が見つかりません');
   });
 });
 ```
@@ -438,7 +570,7 @@ firebase functions:config:set app.gacha_price=200
 firebase deploy --only functions
 
 # 特定の関数のみデプロイ
-firebase deploy --only functions:createPost,functions:getPosts
+firebase deploy --only functions:createPost,functions:getPosts,functions:getSeasons
 ```
 
 ### デプロイ後の確認
