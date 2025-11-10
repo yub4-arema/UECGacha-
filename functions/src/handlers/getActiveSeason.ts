@@ -30,6 +30,7 @@ export async function getActiveSeasonHandler(): Promise<GetActiveSeasonResponse>
     const data = doc.data();
     const season: Season = {
       id: doc.id,
+      ver: data.ver,
       name: data.name,
       startDate: data.startDate,
       endDate: data.endDate || null,

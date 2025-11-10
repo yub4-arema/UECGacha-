@@ -299,6 +299,7 @@ result.data.drinks.forEach(drink => {
 {
   seasons: Array<{
     id: string;                    // シーズンID
+    ver: number;                   // バージョン番号（人が順番を判別できるように）
     name: string;                  // シーズン名
     startDate: Timestamp;          // 開始日時
     endDate: Timestamp | null;     // 終了日時（nullの場合は現在アクティブ）
@@ -310,7 +311,7 @@ result.data.drinks.forEach(drink => {
 #### 処理フロー
 
 1. `seasons`コレクションから全シーズンを取得
-2. 開始日時の降順でソート（新しいシーズンが先頭）
+2. バージョン番号の降順でソート（新しいシーズンが先頭）
 3. シーズン一覧を返却
 
 #### エラーケース
@@ -346,6 +347,7 @@ console.log('現在のシーズン:', activeSeason?.name);
 {
   season: {
     id: string;                    // シーズンID
+    ver: number;                   // バージョン番号（人が順番を判別できるように）
     name: string;                  // シーズン名
     startDate: Timestamp;          // 開始日時
     endDate: Timestamp | null;     // 終了日時（nullの場合は現在アクティブ）
@@ -434,6 +436,7 @@ if (result.data.season) {
 
 ```typescript
 {
+  ver: number;                   // バージョン番号（人が順番を判別できるように、例: 1, 2, 3...）
   name: string;                  // シーズン名（例: "2024年春", "2024年夏"）
   startDate: Timestamp;          // シーズン開始日時
   endDate: Timestamp | null;     // シーズン終了日時（nullの場合は現在アクティブ）
@@ -505,7 +508,7 @@ service cloud.firestore {
 
 3. **seasonsコレクション**
    - `isActive`（昇順）
-   - `startDate`（降順）
+   - `ver`（降順）
 
 ### キャッシュ戦略
 

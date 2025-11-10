@@ -16,7 +16,7 @@ export async function getSeasonsHandler(): Promise<GetSeasonsResponse> {
   try {
     const snapshot = await db
       .collection(COLLECTIONS.SEASONS)
-      .orderBy('startDate', 'desc')
+      .orderBy('ver', 'desc')
       .get();
 
     const seasons: Season[] = [];
@@ -25,6 +25,7 @@ export async function getSeasonsHandler(): Promise<GetSeasonsResponse> {
       const data = doc.data();
       seasons.push({
         id: doc.id,
+        ver: data.ver,
         name: data.name,
         startDate: data.startDate,
         endDate: data.endDate || null,
