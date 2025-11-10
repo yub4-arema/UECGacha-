@@ -98,3 +98,234 @@
 
 ### 5.2. パフォーマンス
 - ページ読み込み、タブ切り替え、統計計算などの各種操作に対し、ユーザーがストレスを感じない高速なレスポンスを維持すること。
+
+---
+
+## 6. 技術要件
+
+### 6.1. 技術スタック
+- **フロントエンド**: Next.js 16, React 19, TypeScript
+- **スタイリング**: Tailwind CSS
+- **UI コンポーネント**: Radix UI
+- **バックエンド/データベース**: Firebase
+  - **認証**: Firebase Authentication (不要の場合は省略可)
+  - **データベース**: Firestore
+  - **ストレージ**: Firebase Storage (写真アップロード用)
+
+### 6.2. 開発環境
+- **パッケージマネージャー**: npm
+- **リンター**: ESLint
+- **フォーマッター**: Prettier (必要に応じて)
+- **バージョン管理**: Git/GitHub
+
+---
+
+## 7. Firestoreスキーマ定義
+
+### 7.1. コレクション構造
+
+#### 7.1.1. `posts` コレクション
+ガチャの結果投稿を管理するコレクション。
+
+| フィールド名 | 型 | 説明 | 必須 | インデックス |
+|---|---|---|---|---|
+| `id` | string | ドキュメントID（自動生成） | ○ | - |
+| `drink_1_name` | string | ドリンク1の名前 | ○ | ○ |
+| `drink_2_name` | string | ドリンク2の名前 | ○ | ○ |
+| `photo_url` | string | 投稿写真のURL | × | - |
+| `profit` | number | お得度（円） | ○ | ○ |
+| `created_at` | timestamp | 投稿日時 | ○ | ○ |
+| `updated_at` | timestamp | 更新日時 | ○ | - |
+
+**複合インデックス**: 
+- `created_at` (降順) + `profit` (降順) - タイムラインの取得用
+
+#### 7.1.2. `drink_master` コレクション
+販売されているドリンク情報を管理するマスターデータ。
+
+| フィールド名 | 型 | 説明 | 必須 | インデックス |
+|---|---|---|---|---|
+| `id` | string | ドキュメントID（自動生成） | ○ | - |
+| `name` | string | ドリンク名（一意） | ○ | ○ |
+| `price` | number | 通常価格（円） | ○ | - |
+| `created_at` | timestamp | 登録日時 | ○ | - |
+
+#### 7.1.3. `gacha_config` コレクション
+ガチャ機の設定情報（ガチャ価格など）を管理する。
+
+| フィールド名 | 型 | 説明 | 必須 |
+|---|---|---|---|
+| `id` | string | ドキュメントID（"config" 固定） | ○ |
+| `gacha_price` | number | ガチャの価格（円） | ○ |
+| `updated_at` | timestamp | 更新日時 | ○ |
+
+### 7.2. セキュリティルール（Firestore Rules）
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // posts コレクションは誰でも読み取り可能、追加のみ可能
+    match /posts/{document=**} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['drink_1_name', 'drink_2_name', 'profit', 'created_at']);
+      allow update, delete: if false;
+    }
+
+    // drink_master コレクションは誰でも読み取り可能
+    match /drink_master/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // gacha_config コレクションは誰でも読み取り可能
+    match /gacha_config/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
+```
+
+### 7.3. ドキュメント例
+
+#### posts コレクション内のドキュメント例
+```json
+{
+  "drink_1_name": "コカ・コーラ",
+  "drink_2_name": "オレンジジュース",
+  "photo_url": "https://storage.googleapis.com/...",
+  "profit": 45,
+  "created_at": "2025-11-09T15:30:00Z",
+  "updated_at": "2025-11-09T15:30:00Z"
+}
+```
+
+#### drink_master コレクション内のドキュメント例
+```json
+{
+  "name": "コカ・コーラ",
+  "price": 150,
+  "created_at": "2025-11-01T00:00:00Z"
+}
+```
+
+#### gacha_config コレクション内のドキュメント例
+```json
+{
+  "gacha_price": 300,
+  "updated_at": "2025-11-01T00:00:00Z"
+}
+```
+
+---
+
+## 8. Firestore 関数仕様
+
+### 8.1. 投稿関連関数
+
+#### 8.1.1. `createPost(drink1Name: string, drink2Name: string, photoUrl?: string): Promise<string>`
+- **説明**: ガチャ結果を投稿する
+- **引数**:
+  - `drink1Name`: ドリンク1の名前
+  - `drink2Name`: ドリンク2の名前
+  - `photoUrl`: (オプション) 写真URL
+- **戻り値**: 作成されたドキュメントID
+- **処理フロー**:
+  1. `drink_master` から各ドリンクの価格を取得
+  2. `gacha_config` からガチャ価格を取得
+  3. `profit = (price1 + price2) - gacha_price` を計算
+  4. `posts` に新規ドキュメントを作成
+- **エラーハンドリング**: ドリンク名が見つからない場合、既知のドリンクのみで計算
+
+#### 8.1.2. `getPosts(limit: number = 20, startAfter?: DocumentSnapshot): Promise<Post[]>`
+- **説明**: タイムライン表示用の投稿一覧を取得（新順）
+- **引数**:
+  - `limit`: 取得件数
+  - `startAfter`: (オプション) ページング用スナップショット
+- **戻り値**: Post[]（id, drink_1_name, drink_2_name, photo_url, profit, created_at を含む）
+- **クエリ条件**: `created_at` 降順でソート
+
+#### 8.1.3. `getPostById(postId: string): Promise<Post | null>`
+- **説明**: 特定の投稿を取得
+- **引数**: `postId` - 投稿ID
+- **戻り値**: Post オブジェクト、見つからない場合は null
+
+### 8.2. ドリンク関連関数
+
+#### 8.2.1. `getDrinkMaster(): Promise<DrinkMaster[]>`
+- **説明**: 全ドリンクマスターデータを取得
+- **引数**: なし
+- **戻り値**: DrinkMaster[]（id, name, price を含む）
+
+#### 8.2.2. `getDrinkByName(name: string): Promise<DrinkMaster | null>`
+- **説明**: ドリンク名からマスターデータを検索
+- **引数**: `name` - ドリンク名
+- **戻り値**: DrinkMaster、見つからない場合は null
+
+#### 8.2.3. `addDrinkMaster(name: string, price: number): Promise<string>`
+- **説明**: 新しいドリンクをマスターに追加（管理画面用）
+- **引数**:
+  - `name`: ドリンク名
+  - `price`: 価格（円）
+- **戻り値**: 作成されたドキュメントID
+
+### 8.3. 統計関連関数
+
+#### 8.3.1. `getDrinkRanking(limit: number = 10): Promise<DrinkRankingItem[]>`
+- **説明**: ドリンク別排出率ランキングを取得
+- **戻り値**: `{ name: string, count: number, percentage: number }[]`
+- **処理**: posts から飲料名を集計し、出現回数でランキング化
+
+#### 8.3.2. `getProfitRanking(limit: number = 10): Promise<Post[]>`
+- **説明**: お得度ランキング（最も得した投稿組み合わせ）を取得
+- **戻り値**: Post[]（profit 降順）
+
+#### 8.3.3. `getTotalProfit(): Promise<number>`
+- **説明**: サイト全体の累計お得額を取得
+- **戻り値**: 合計額（円）
+- **処理**: posts の profit フィールドの合計
+
+#### 8.3.4. `getDrinkCombinationRanking(limit: number = 10): Promise<CombinationRankingItem[]>`
+- **説明**: ドリンク組み合わせランキングを取得
+- **戻り値**: `{ drink1: string, drink2: string, count: number, totalProfit: number }[]`
+
+### 8.4. 型定義
+
+```typescript
+interface Post {
+  id: string;
+  drink_1_name: string;
+  drink_2_name: string;
+  photo_url?: string;
+  profit: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface DrinkMaster {
+  id: string;
+  name: string;
+  price: number;
+  created_at: Date;
+}
+
+interface GachaConfig {
+  id: string;
+  gacha_price: number;
+  updated_at: Date;
+}
+
+interface DrinkRankingItem {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+interface CombinationRankingItem {
+  drink1: string;
+  drink2: string;
+  count: number;
+  totalProfit: number;
+}
+```
