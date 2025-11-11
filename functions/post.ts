@@ -140,8 +140,8 @@ export async function getMyPosts(postIds: string[]): Promise<Post[]> {
 
     const posts: Post[] = [];
 
-    // Firestoreのinクエリは最大30件まで指定可能なので、30件ずつバッチ取得する
-    const batchSize = 30;
+    // Firestoreのinクエリは最大10件まで指定可能なので、10件ずつバッチ取得する
+    const batchSize = 10;
     for (let i = 0; i < postIds.length; i += batchSize) {
       const batch = postIds.slice(i, i + batchSize);
       const q = query(
