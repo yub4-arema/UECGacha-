@@ -7,6 +7,7 @@ import {
   query,
   orderBy,
   limit,
+  where,
   Timestamp,
   DocumentData,
 } from 'firebase/firestore';
