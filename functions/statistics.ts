@@ -43,8 +43,7 @@ export async function getDrinkRanking(): Promise<DrinkRanking[]> {
 
     postsSnapshot.forEach((doc) => {
       const data = doc.data();
-      const drink1_id = data.drink1_id;
-      const drink2_id = data.drink2_id;
+      const { drink1_id, drink2_id } = data;
 
       // drink1のカウント
       drinkCounts.set(drink1_id, (drinkCounts.get(drink1_id) || 0) + 1);
