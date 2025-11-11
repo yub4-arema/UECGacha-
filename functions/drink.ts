@@ -88,6 +88,6 @@ export async function getDrinkById(drinkId: number): Promise<Drink | null> {
     return drink || null;
   } catch (error) {
     console.error('ドリンク情報の取得に失敗しました:', error);
-    throw new Error('ドリンク情報の取得に失敗しました');
+    throw new Error(`ドリンク情報の取得に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
