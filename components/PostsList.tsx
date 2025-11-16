@@ -76,7 +76,7 @@ const PostItem = ({ post }: { post: Post }) => {
           size="sm"
           onClick={() => setLiked(!liked)}
         >
-          👍 {post.likeCount + (liked ? 1 : 0)}
+          いいね {post.likeCount + (liked ? 1 : 0)}
         </Button>
       </CardFooter>
     </Card>

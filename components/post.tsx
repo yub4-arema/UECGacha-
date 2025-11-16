@@ -23,7 +23,7 @@ const Post = () => {
   const [category, setCategory] = useState<PostCategory>("授業")
   const [targetYear, setTargetYear] = useState<number | null>(null)
   const [targetMajor, setTargetMajor] = useState<"I類" | "II類" | "III類" | null>(null)
-  const [targetClass, setTargetClass] = useState<string | null>(null)
+  const [targetClass, setTargetClass] = useState<string>("")
 
   const categoryOptions: ComboboxOption[] = [
     { value: "授業", label: "授業" },
@@ -58,7 +58,7 @@ const Post = () => {
         category,
         targetYear,
         targetMajor,
-        targetClass: targetClass ,
+        targetClass: targetClass || null,
         createdAt: new Date(),
         likeCount: 0,
       });
@@ -69,7 +69,7 @@ const Post = () => {
       setCategory("授業");
       setTargetYear(null);
       setTargetMajor(null);
-      setTargetClass(null);
+      setTargetClass("");
       alert("投稿しました！");
     } catch (error) {
       console.error("投稿エラー:", error);

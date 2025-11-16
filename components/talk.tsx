@@ -23,13 +23,16 @@ export default function Talk() {
     
     setLoading(true);
     setResponse("");
-    try {
+      try {
       const res = await TalkAi(question);
       if (res.text) {
         setResponse(res.text);
         setQuestion("");
       } else if (res.error) {
-        setResponse("エラー。作者の財布が尽きたようです。");
+        // Display the error reason from the server so 'Talk' can show it.
+        // Keep a short friendly message but include the underlying reason for debugging.
+        const stack = (res as any).stack;
+        setResponse(`${res.error}${stack ? `\n\n詳細スタック:\n${stack}` : ''}`);
       }
     } catch (error) {
       setResponse(`Googleが何かバグったようです: ${error instanceof Error ? error.message : 'えーっと...エラーです。'}`);
@@ -70,11 +73,10 @@ return (
         </InputGroupButton>
       </InputGroupAddon>
     </InputGroup>
-    <button 
-        onClick={()=> setLoading(!loading)}
-    >ローディングにする</button>
     {loading ? (
-      <Skeleton className="h-[200px] w-full rounded-md" />
+      <div className="flex justify-center" aria-label="読み込み中">
+    <div className="animate-spin h-8 w-8 bg-[#ffffff] border-[#000000] rounded-xl"></div>
+</div>
     ) : (
       <Textarea placeholder="まずは質問" value={response} readOnly />
     )}
