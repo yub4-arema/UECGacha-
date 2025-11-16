@@ -139,7 +139,7 @@ const Post = () => {
                     placeholder="指定なし"
                     searchPlaceholder="類を検索..."
                     value={targetMajor ?? ""}
-                    onValueChange={(value) => setTargetMajor(value as "I類" | "II類" | "III類" | undefined || undefined)}
+                    onValueChange={(value) => setTargetMajor(value ? (value as "I類" | "II類" | "III類") : null)}
                     label="類"
                     showLabel={true}
                     width="w-[100px]"

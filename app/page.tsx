@@ -36,7 +36,7 @@ export default function Home() {
           </div>
           {postings && 
           <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="w-full max-w-2xl bg-white rounded-lg p-6 shadow-lg">
+            <div className="w-full max-w-2xl bg-white rounded-lg p-6 shadow-lg overflow-y-auto max-h-[90vh]">
               <div className="flex justify-end mb-4">
                 <Button variant="outline" onClick={()=>setPostings(!postings)}>閉じる</Button>
               </div>
