@@ -84,7 +84,7 @@ return (
         onChange={(e) => setQuestion(e.target.value)}
       />
       <InputGroupAddon align="block-end" className="border-t">
-        <InputGroupText>25botは程よく信じましょう</InputGroupText>
+        <InputGroupText>25_botは程よく信じましょう</InputGroupText>
         {loading ? <InputGroupButton size="sm" className="ml-auto" variant="default" disabled>
             <IoHourglassOutline />
         </InputGroupButton> :
@@ -95,7 +95,7 @@ return (
       </InputGroupAddon>
       <InputGroupAddon align="block-start" className="border-b">
         <InputGroupText className="font-mono font-medium">
-          25bot
+          25_bot
         </InputGroupText>
         <InputGroupButton className="ml-auto" size="icon-xs">
           
