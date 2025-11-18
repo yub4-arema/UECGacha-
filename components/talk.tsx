@@ -10,7 +10,7 @@ import {
 import { CiPaperplane } from "react-icons/ci";
 import { IoHourglassOutline } from "react-icons/io5";
 import { Textarea } from "@/components/ui/textarea"
-import TalkAi from "@/functions/talk"
+import TalkAi from "@/functions/talk";
 
 export default function Talk() {
   const [question, setQuestion] = useState("");
@@ -52,8 +52,10 @@ export default function Talk() {
     
     setLoading(true);
     setResponse("");
-      try {
-        await callRssApi();
+    try {
+      // RSS更新APIを呼び出し（サーバー側で環境変数を処理）
+      await callRssApi();
+      
       const res = await TalkAi(question);
       if (res.text) {
         setResponse(res.text);
@@ -76,13 +78,13 @@ return (
     <InputGroup>
       <InputGroupTextarea
         id="textarea-code-32"
-        placeholder="質問を入力してください"
+        placeholder={`質問を入力してください\n(直近の投稿やtwitterの内容を参考に回答します.)`}
         className="min-h-[200px]"
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
       />
       <InputGroupAddon align="block-end" className="border-t">
-        <InputGroupText>AIは程よく信じましょう</InputGroupText>
+        <InputGroupText>25botは程よく信じましょう</InputGroupText>
         {loading ? <InputGroupButton size="sm" className="ml-auto" variant="default" disabled>
             <IoHourglassOutline />
         </InputGroupButton> :
@@ -93,7 +95,7 @@ return (
       </InputGroupAddon>
       <InputGroupAddon align="block-start" className="border-b">
         <InputGroupText className="font-mono font-medium">
-          UEC_AI
+          25bot
         </InputGroupText>
         <InputGroupButton className="ml-auto" size="icon-xs">
           

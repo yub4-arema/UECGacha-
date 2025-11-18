@@ -21,9 +21,10 @@ export async function POST(request: Request) {
     const savedCount = await FetchAndSaveRssToFirestore(rssUrl);
     return NextResponse.json({ savedCount });
   } catch (error) {
-    console.error("RSS APIエラー:", error);
+    const errorMessage = error instanceof Error ? error.message : "不明なエラー";
+    console.error("RSS APIエラー:", errorMessage);
     return NextResponse.json(
-      { error: "RSSの取得または保存に失敗しました" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
