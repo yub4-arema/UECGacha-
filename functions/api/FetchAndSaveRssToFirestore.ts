@@ -107,13 +107,13 @@ export async function FetchAndSaveRssToFirestore(rssUrl: string): Promise<number
     const now = new Date();
     
     // Check if 10 minutes have passed since last execution
-    const tenMinutesInMs = 10 * 60 * 1000;
+    const tenMinutesInMs = 30 * 60 * 1000;
     const shouldFetch = lastExecutionTime === null || 
                         (now.getTime() - lastExecutionTime.getTime()) >= tenMinutesInMs;
 
     if (!shouldFetch) {
       const minutesPassed = Math.floor((now.getTime() - lastExecutionTime.getTime()) / 60000);
-      console.log(`前回実行から${minutesPassed}分経過しています。10分以上経過するまで待機します。`);
+      console.log(`前回実行から${minutesPassed}分経過しています。30分以上経過するまで待機します。`);
       return 0;
     }
 
