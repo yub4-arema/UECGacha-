@@ -14,7 +14,6 @@ import { RssItem, Latest200RssResponse } from "./types";
 function isValidRssItem(data: any): data is RssItem {
   return (
     typeof data.title === 'string' &&
-    typeof data.link === 'string' &&
     (data.pubDate instanceof Timestamp || data.pubDate instanceof Date || typeof data.pubDate === 'string')
   );
 }

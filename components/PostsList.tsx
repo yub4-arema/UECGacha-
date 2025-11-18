@@ -70,15 +70,6 @@ const PostItem = ({ post }: { post: Post }) => {
           </div>
         )}
       </CardContent>
-      <CardFooter>
-        <Button
-          variant={liked ? "default" : "outline"}
-          size="sm"
-          onClick={() => setLiked(!liked)}
-        >
-          いいね {post.likeCount + (liked ? 1 : 0)}
-        </Button>
-      </CardFooter>
     </Card>
   )
 }

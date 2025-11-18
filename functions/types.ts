@@ -48,7 +48,7 @@ interface RssItem {
   title: string;
   
   /** リンクURL */
-  link: string;
+  link?: string;
   
   /** 公開日時 */
   pubDate: Date;
