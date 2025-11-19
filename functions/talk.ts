@@ -282,7 +282,7 @@ const TalkAi = async (question: string) => {
     
     const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-lite",
-    contents:s [
+    contents: [
         {
           role: "user",
           parts: [
